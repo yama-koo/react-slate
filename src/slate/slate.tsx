@@ -1,79 +1,15 @@
 import React, { useMemo, useState, useCallback } from 'react'
-import { createEditor, Node, Transforms, Editor, Text, Range, Point } from 'slate'
-import {
-  withReact,
-  Editable,
-  Slate,
-  RenderElementProps,
-  RenderLeafProps,
-  ReactEditor,
-} from 'slate-react'
+import { createEditor, Node, Editor, Transforms, Text } from 'slate'
+import { withReact, Editable, Slate, RenderElementProps, RenderLeafProps } from 'slate-react'
 import { withHistory } from 'slate-history'
-
-const CustomEditor = {
-  isBoldMarkActive(editor: Editor) {
-    // eslint-disable-next-line @typescript-eslint/ban-ts-ignore
-    // @ts-ignore
-    const [match] = Editor.nodes(editor, {
-      match: n => n.bold === true,
-      universal: true,
-    })
-    return !!match
-  },
-
-  isCodeBlockActive(editor: Editor) {
-    // eslint-disable-next-line @typescript-eslint/ban-ts-ignore
-    // @ts-ignore
-    const [match] = Editor.nodes(editor, {
-      match: n => n.type === 'code',
-    })
-
-    return !!match
-  },
-
-  isListActive(editor: Editor) {
-    // eslint-disable-next-line @typescript-eslint/ban-ts-ignore
-    // @ts-ignore
-    const [match] = Editor.nodes(editor, {
-      match: n => n.type === 'list',
-    })
-
-    return !!match
-  },
-
-  toggleBoldMark(editor: Editor) {
-    const isActive = CustomEditor.isBoldMarkActive(editor)
-    Transforms.setNodes(
-      editor,
-      { bold: isActive ? null : true },
-      { match: n => Text.isText(n), split: true },
-    )
-  },
-
-  toggleCodeBlock(editor: Editor) {
-    const isActive = CustomEditor.isCodeBlockActive(editor)
-    Transforms.setNodes(
-      editor,
-      { type: isActive ? null : 'code' },
-      { match: n => Editor.isBlock(editor, n) },
-    )
-  },
-
-  toggleList(editor: Editor) {
-    const isActive = CustomEditor.isListActive(editor)
-    Transforms.setNodes(
-      editor,
-      { type: isActive ? null : 'list' },
-      {
-        match: n => {
-          return Editor.isBlock(editor, n)
-        },
-      },
-    )
-
-    Transforms.wrapNodes(editor, { type: 'ul', children: [] }, { match: n => n.type === 'list' })
-  },
-}
+import { withShortcuts } from './Plugins/withShortcuts'
+import { BlockQuoteWrapperElement, BlockQuoteItemElement } from './Elements/BlockQuote'
+import { ListItemElement, UlElement, OlElement } from './Elements/List'
+import { CodeBlockElement } from './Elements/Code'
+import { Leaf } from './leaf'
+import { CheckBoxElement } from './Elements/Checkbox'
+import { DefaultElement } from './Elements/Default'
+import { ToolBar } from './ToolBar/ToolBar'
 
 export const MySlate = () => {
   const editor = useMemo(() => withShortcuts(withReact(withHistory(createEditor()))), [])
@@ -83,18 +19,46 @@ export const MySlate = () => {
       type: 'paragraph',
       children: [{ text: 'Aline of text in a paragraph' }],
     },
+    // {
+    //   type: 'ul',
+    //   children: [
+    //     { type: 'ul-item', children: [{ text: 'Aline of text in a paragraph' }] },
+    //     { type: 'ul-item', children: [{ text: 'aaaa' }] },
+    //     { type: 'ul-item', children: [{ text: 'bbbb' }] },
+    //     { type: 'ul-item', children: [{ text: 'cccc' }] },
+    //   ],
+    // },
   ])
 
   const renderElement = useCallback((props: RenderElementProps) => {
     switch (props.element.type) {
-      case 'code':
-        return <CodeElement {...props} />
-      case 'list':
-        return <ListElement {...props} />
+      case 'code-block':
+        return <CodeBlockElement {...props} />
       case 'ul':
         return <UlElement {...props} />
-      case 'heading-one':
+      case 'ol':
+        return <OlElement {...props} />
+      case 'ul-item':
+      case 'ol-item':
+        return <ListItemElement {...props} />
+      case 'h1':
         return <h1 {...props.attributes}>{props.children}</h1>
+      case 'h2':
+        return <h2 {...props.attributes}>{props.children}</h2>
+      case 'h3':
+        return <h3 {...props.attributes}>{props.children}</h3>
+      case 'h4':
+        return <h4 {...props.attributes}>{props.children}</h4>
+      case 'h5':
+        return <h5 {...props.attributes}>{props.children}</h5>
+      case 'h6':
+        return <h6 {...props.attributes}>{props.children}</h6>
+      case 'block-quote-wrapper':
+        return <BlockQuoteWrapperElement {...props} />
+      case 'block-quote-item':
+        return <BlockQuoteItemElement {...props} />
+      case 'checkbox':
+        return <CheckBoxElement {...props} />
       default:
         return <DefaultElement {...props} />
     }
@@ -104,8 +68,25 @@ export const MySlate = () => {
     return <Leaf {...props} />
   }, [])
 
+  const handleOnMouseDown = (type: string) => {
+    switch (type) {
+      case 'Bold':
+        toggleBoldMark(editor)
+        break
+      case 'Code':
+        toggleCodeMark(editor)
+        break
+      case 'Ul':
+        toggleUlMark(editor)
+        break
+      default:
+        break
+    }
+  }
+
+  // console.log(editor.children)
   return (
-    <div style={{ width: '80%' }}>
+    <div style={{ width: '60%' }}>
       <div>{JSON.stringify(value)}</div>
       <div
         style={{
@@ -115,45 +96,35 @@ export const MySlate = () => {
           display: 'inline-block',
         }}
       >
+        <ToolBar onMouseDown={handleOnMouseDown} />
         <Slate editor={editor} value={value} onChange={v => setValue(v)}>
-          <div>
-            <button
-              onMouseDown={event => {
-                event.preventDefault()
-                CustomEditor.toggleBoldMark(editor)
-              }}
-            >
-              B
-            </button>
-            <button
-              onMouseDown={event => {
-                event.preventDefault()
-                CustomEditor.toggleCodeBlock(editor)
-              }}
-            >
-              C
-            </button>
-          </div>
           <Editable
             renderElement={renderElement}
             renderLeaf={renderLeaf}
             onKeyDown={event => {
-              if (!event.ctrlKey) {
-                return
-              }
+              // if (!event.ctrlKey) {
+              //   return
+              // }
+              // console.log(event.key)
               switch (event.key) {
-                case '`':
-                  event.preventDefault()
-                  CustomEditor.toggleCodeBlock(editor)
-                  break
-                case 'b':
-                  event.preventDefault()
-                  CustomEditor.toggleBoldMark(editor)
-                  break
-                case 'u':
-                  event.preventDefault()
-                  CustomEditor.toggleList(editor)
-                  break
+                // case '`':
+                //   event.preventDefault()
+                //   CustomEditor.toggleCodeBlock(editor)
+                //   break
+                // case 'b':
+                //   event.preventDefault()
+                //   CustomEditor.toggleBoldMark(editor)
+                //   break
+                // case 'u':
+                //   event.preventDefault()
+                //   CustomEditor.toggleList(editor)
+                //   break
+                // case 'Enter':
+                //   console.log(event.key)
+                //   event.preventDefault()
+                //   Transforms.insertText(editor, '')
+                //   // editor.insertNode({ text: '', type: 'paragraph' })
+                //   break
                 default:
                   break
               }
@@ -165,121 +136,87 @@ export const MySlate = () => {
   )
 }
 
-const CodeElement = (props: RenderElementProps) => {
-  const { children } = props
-  return (
-    <pre>
-      <code>{children}</code>
-    </pre>
+const isBoldMarkActive = (editor: Editor) => {
+  // eslint-disable-next-line @typescript-eslint/ban-ts-ignore
+  // @ts-ignore
+  const [match] = Editor.nodes(editor, {
+    match: n => n.bold === true,
+    universal: true,
+  })
+  return !!match
+}
+
+const toggleBoldMark = (editor: Editor) => {
+  const isActive = isBoldMarkActive(editor)
+  Transforms.setNodes(
+    editor,
+    { bold: isActive ? null : true },
+    { match: n => Text.isText(n), split: true },
   )
 }
 
-const DefaultElement = (props: {
-  attributes: JSX.IntrinsicAttributes &
-    React.ClassAttributes<HTMLParagraphElement> &
-    React.HTMLAttributes<HTMLParagraphElement>
-  children: React.ReactNode
-}) => {
-  const { attributes, children } = props
-  return <p {...attributes}>{children}</p>
+const isCodeInlineActive = (editor: Editor) => {
+  // eslint-disable-next-line @typescript-eslint/ban-ts-ignore
+  // @ts-ignore
+  const [match] = Editor.nodes(editor, {
+    match: n => n.code === true,
+    universal: true,
+  })
+
+  return !!match
 }
 
-const Leaf = (props: RenderLeafProps) => {
-  const { attributes, leaf, children } = props
-  return (
-    <span {...attributes} style={{ fontWeight: leaf.bold ? 'bold' : 'normal' }}>
-      {children}
-    </span>
+const toggleCodeMark = (editor: Editor) => {
+  const isActive = isCodeInlineActive(editor)
+  Transforms.setNodes(
+    editor,
+    { code: isActive ? null : true },
+    { match: n => Text.isText(n), split: true },
   )
 }
 
-const ListElement = (props: RenderElementProps) => {
-  const { attributes, children } = props
-  return <li {...attributes}>{children}</li>
+const isUlActive = (editor: Editor) => {
+  // eslint-disable-next-line @typescript-eslint/ban-ts-ignore
+  // @ts-ignore
+  const [match] = Editor.nodes(editor, {
+    match: n => n.type === 'ul-item',
+    universal: true,
+  })
+
+  return !!match
 }
 
-const UlElement = (props: RenderElementProps) => {
-  const { attributes, children } = props
-  return <ol {...attributes}>{children}</ol>
-}
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const toggleUlMark = (editor: Editor) => {
+  const isActive = isUlActive(editor)
 
-const SHORTCUTS: { [key: string]: string } = {
-  '*': 'list-item',
-  '-': 'list-item',
-  '+': 'list-item',
-  '>': 'block-quote',
-  '#': 'heading-one',
-  '##': 'heading-two',
-  '###': 'heading-three',
-  '####': 'heading-four',
-  '#####': 'heading-five',
-  '######': 'heading-six',
-}
+  // console.log(editor)
+  Transforms.unwrapNodes(editor, {
+    match: n => {
+      // console.log(n, n.type === 'ul')
+      return n.type === 'ul'
+    },
+    split: true,
+  })
 
-const withShortcuts = (editor: ReactEditor) => {
-  const { deleteBackward, insertText } = editor
-
-  editor.insertText = text => {
-    const { selection } = editor
-
-    if (text === ' ' && selection && Range.isCollapsed(selection)) {
-      const { anchor } = selection
-      const block = Editor.above(editor, {
-        match: n => Editor.isBlock(editor, n),
-      })
-      const path = block ? block[1] : []
-      const start = Editor.start(editor, path)
-      const range = { anchor, focus: start }
-      const beforeText = Editor.string(editor, range)
-      const type = SHORTCUTS[beforeText]
-
-      if (type) {
-        Transforms.select(editor, range)
-        Transforms.delete(editor)
-        Transforms.setNodes(editor, { type }, { match: n => Editor.isBlock(editor, n) })
-
-        if (type === 'list-item') {
-          const list = { type: 'bulleted-list', children: [] }
-          Transforms.wrapNodes(editor, list, {
-            match: n => n.type === 'list-item',
-          })
-        }
-
-        return
-      }
-    }
-
-    insertText(text)
+  Transforms.setNodes(
+    editor,
+    { type: isActive ? 'paragraph' : 'ul-item' },
+    { match: n => Editor.isBlock(editor, n) },
+  )
+  // console.log(editor)
+  if (!isActive) {
+    Transforms.wrapNodes(
+      editor,
+      { type: 'ul', children: [] },
+      {
+        match: n => {
+          // console.log(n)
+          console.log(n.type === 'ul-item')
+          return n.type === 'ul-item'
+        },
+        split: true,
+      },
+    )
   }
-
-  editor.deleteBackward = (...args) => {
-    const { selection } = editor
-
-    if (selection && Range.isCollapsed(selection)) {
-      const match = Editor.above(editor, {
-        match: n => Editor.isBlock(editor, n),
-      })
-
-      if (match) {
-        const [block, path] = match
-        const start = Editor.start(editor, path)
-
-        if (block.type !== 'paragraph' && Point.equals(selection.anchor, start)) {
-          Transforms.setNodes(editor, { type: 'paragraph' })
-
-          if (block.type === 'list-item') {
-            Transforms.unwrapNodes(editor, {
-              match: n => n.type === 'bulleted-list',
-            })
-          }
-
-          return
-        }
-      }
-
-      deleteBackward(...args)
-    }
-  }
-
-  return editor
 }
