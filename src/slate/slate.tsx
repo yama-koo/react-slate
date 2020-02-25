@@ -11,6 +11,7 @@ import {
 } from 'slate-react'
 import { withHistory } from 'slate-history'
 import ReactDOM from 'react-dom'
+import { css, cx } from 'emotion'
 import { withShortcuts } from './Plugins/withShortcuts'
 import { BlockQuoteWrapperElement, BlockQuoteItemElement } from './Elements/BlockQuote'
 import { ListItemElement, UlElement, OlElement } from './Elements/List'
@@ -69,23 +70,44 @@ const ToolBar: SFC = ({ children }) => {
   return (
     <Portal>
       <div
-        style={{
-          padding: '8px 7px 6px',
-          position: 'absolute',
-          zIndex: 1,
-          top: '-10000px',
-          left: '-10000px',
-          marginTop: '-6px',
-          opacity: 0,
-          backgroundColor: '#222',
-          borderRadius: '4px',
-          transition: 'opacity 0.75s',
-          whiteSpace: 'pre-wrap',
-          margin: '0 -20px 10px',
-          // padding: '10px 20px',
-          fontSize: '14px',
-          background: '#f8f8e8',
-        }}
+        // style={{
+        //   padding: '8px 7px 6px',
+        //   position: 'absolute',
+        //   zIndex: 1,
+        //   top: '-10000px',
+        //   left: '-10000px',
+        //   marginTop: '-6px',
+        //   opacity: 0,
+        //   backgroundColor: '#222',
+        //   borderRadius: '4px',
+        //   transition: 'opacity 0.75s',
+        //   whiteSpace: 'pre-wrap',
+        //   margin: '0 -20px 10px',
+        //   // padding: '10px 20px',
+        //   fontSize: '14px',
+        //   background: '#f8f8e8',
+        // }}
+        className={cx(
+          css`
+            padding: 8px 7px 6px;
+            position: absolute;
+            z-index: 1;
+            top: -10000px;
+            left: -10000px;
+            margin-top: -6px;
+            opacity: 0;
+            background-color: #922;
+            border-radius: 4px;
+            transition: opacity 0.75s;
+          `,
+          css`
+            white-space: pre-wrap;
+            margin: 0 -20px 10px;
+            padding: 10px 20px;
+            font-size: 14px;
+            background: #f8f8e8;
+          `,
+        )}
         ref={ref}
       >
         {/* <div
