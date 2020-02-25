@@ -1,5 +1,6 @@
 import React, { SFC } from 'react'
 import { MySlate } from './slate/slate'
+import HoveringMenuExample from './examples/hovering-toolbar'
 
 export const App: SFC = () => {
   return (
@@ -13,6 +14,7 @@ export const App: SFC = () => {
       }}
     >
       <MySlate />
+      <HoveringMenuExample />
     </div>
   )
 }

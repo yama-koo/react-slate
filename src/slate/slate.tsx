@@ -1,7 +1,16 @@
-import React, { useMemo, useState, useCallback } from 'react'
-import { createEditor, Node, Editor, Transforms } from 'slate'
-import { withReact, Editable, Slate, RenderElementProps, RenderLeafProps } from 'slate-react'
+import React, { useMemo, useState, useCallback, SFC, useRef, useEffect } from 'react'
+import { createEditor, Node, Editor, Transforms, Range } from 'slate'
+import {
+  withReact,
+  Editable,
+  Slate,
+  RenderElementProps,
+  RenderLeafProps,
+  useSlate,
+  ReactEditor,
+} from 'slate-react'
 import { withHistory } from 'slate-history'
+import ReactDOM from 'react-dom'
 import { withShortcuts } from './Plugins/withShortcuts'
 import { BlockQuoteWrapperElement, BlockQuoteItemElement } from './Elements/BlockQuote'
 import { ListItemElement, UlElement, OlElement } from './Elements/List'
@@ -9,12 +18,116 @@ import { CodeBlockElement } from './Elements/Code'
 import { Leaf } from './leaf'
 import { CheckBoxElement } from './Elements/Checkbox'
 import { DefaultElement } from './Elements/Default'
-import { ToolBar, Button } from './ToolBar/ToolBar'
+// import { ToolBar, Button } from './ToolBar/ToolBar'
 
 const LIST = ['ul', 'ol']
 
 const isList = (type: string) => {
   return LIST.includes(type)
+}
+
+const Portal: SFC = ({ children }) => {
+  return ReactDOM.createPortal(children, document.body)
+}
+
+const ToolBar: SFC = ({ children }) => {
+  const ref = useRef<HTMLDivElement>(null)
+  const editor = useSlate()
+
+  useEffect(() => {
+    const el = ref.current
+    const { selection } = editor
+
+    if (!el) {
+      return
+    }
+
+    if (
+      !selection ||
+      !ReactEditor.isFocused(editor) ||
+      Range.isCollapsed(selection) ||
+      Editor.string(editor, selection) === ''
+    ) {
+      el.removeAttribute('style')
+      return
+    }
+
+    const domSelection = window.getSelection()
+    if (!domSelection) {
+      return
+    }
+    const domRange = domSelection.getRangeAt(0)
+    const rect = domRange.getBoundingClientRect()
+    if (!rect) {
+      return
+    }
+    console.log('slate', rect)
+    el.style.opacity = '1'
+    el.style.top = `${rect.top + window.pageYOffset - el.offsetHeight}px`
+    el.style.left = `${rect.left + window.pageXOffset - el.offsetWidth / 2 + rect.width / 2}px`
+  })
+  return (
+    <Portal>
+      <div
+        style={{
+          padding: '8px 7px 6px',
+          position: 'absolute',
+          zIndex: 1,
+          top: '-10000px',
+          left: '-10000px',
+          marginTop: '-6px',
+          opacity: 0,
+          backgroundColor: '#222',
+          borderRadius: '4px',
+          transition: 'opacity 0.75s',
+          whiteSpace: 'pre-wrap',
+          margin: '0 -20px 10px',
+          // padding: '10px 20px',
+          fontSize: '14px',
+          background: '#f8f8e8',
+        }}
+        ref={ref}
+      >
+        {/* <div
+          style={{
+            whiteSpace: 'pre-wrap',
+            margin: '0 -20px 10px',
+            padding: '10px 20px',
+            fontSize: '14px',
+            background: '#f8f8e8',
+          }}
+        > */}
+        {children}
+        {/* </div> */}
+      </div>
+    </Portal>
+  )
+}
+
+const MarkButton = ({ editor, text, format }: { editor: Editor; text: string; format: string }) => {
+  return (
+    <button
+      onMouseDown={e => {
+        e.preventDefault()
+        toggleMark(editor, format)
+      }}
+    >
+      {text}
+    </button>
+  )
+}
+
+const BlockButton = ({ editor, text, type }: { editor: Editor; text: string; type: string }) => {
+  return (
+    <button
+      onMouseDown={e => {
+        e.preventDefault()
+        toggleBlock(editor, type)
+      }}
+    >
+      {text}
+    </button>
+  )
 }
 
 export const MySlate = () => {
@@ -45,8 +158,6 @@ export const MySlate = () => {
         return <UlElement {...props} />
       case 'ol':
         return <OlElement {...props} />
-      case 'ul-item':
-      case 'ol-item':
       case 'list':
         return <ListItemElement {...props} />
       case 'h1':
@@ -87,81 +198,6 @@ export const MySlate = () => {
           display: 'inline-block',
         }}
       >
-        {/* <ToolBar onMouseDown={handleOnMouseDown}> */}
-        <ToolBar>
-          <Button
-            text="H1"
-            toggleEvent={() => {
-              toggleBlock(editor, 'h1')
-            }}
-          />
-          <Button
-            text="H3"
-            toggleEvent={() => {
-              toggleBlock(editor, 'h3')
-            }}
-          />
-          <Button
-            text="B"
-            toggleEvent={() => {
-              toggleMark(editor, 'bold')
-            }}
-          />
-          <Button
-            text="C"
-            toggleEvent={() => {
-              toggleMark(editor, 'code')
-            }}
-          />
-          <Button
-            text="UL"
-            toggleEvent={() => {
-              toggleBlock(editor, 'ul')
-            }}
-          />
-          <Button
-            text="OL"
-            toggleEvent={() => {
-              toggleBlock(editor, 'ol')
-            }}
-          />
-          <Button
-            text="U"
-            toggleEvent={() => {
-              toggleMark(editor, 'underline')
-            }}
-          />
-          <Button
-            text="Hi"
-            toggleEvent={() => {
-              toggleMark(editor, 'highlight')
-            }}
-          />
-          <Button
-            text="[]"
-            toggleEvent={() => {
-              toggleBlock(editor, 'checkbox')
-            }}
-          />
-          <Button
-            text="''"
-            toggleEvent={() => {
-              toggleBlock(editor, 'block-quote-wrapper')
-            }}
-          />
-          <Button
-            text="S"
-            toggleEvent={() => {
-              toggleMark(editor, 'strike')
-            }}
-          />
-          <Button
-            text="I"
-            toggleEvent={() => {
-              toggleMark(editor, 'italic')
-            }}
-          />
-        </ToolBar>
         <Slate
           editor={editor}
           value={value}
@@ -169,6 +205,20 @@ export const MySlate = () => {
             setValue(v)
           }}
         >
+          <ToolBar>
+            <BlockButton editor={editor} text="H1" type="h1" />
+            <BlockButton editor={editor} text="H3" type="h3" />
+            <MarkButton editor={editor} text="B" format="bold" />
+            <MarkButton editor={editor} text="C" format="code" />
+            <BlockButton editor={editor} text="UL" type="ul" />
+            <BlockButton editor={editor} text="OL" type="ol" />
+            <MarkButton editor={editor} text="U" format="underline" />
+            <MarkButton editor={editor} text="Hi" format="highlight" />
+            <BlockButton editor={editor} text="[]" type="checkbox" />
+            <BlockButton editor={editor} text="''" type="block-quote-wrapper" />
+            <MarkButton editor={editor} text="S" format="strike" />
+            <MarkButton editor={editor} text="I" format="italic" />
+          </ToolBar>
           <Editable
             renderElement={renderElement}
             renderLeaf={renderLeaf}
