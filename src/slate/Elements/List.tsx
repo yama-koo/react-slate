@@ -36,7 +36,7 @@ export const ListItemElement = ({ attributes, children }: RenderElementProps) =>
 }
 
 export const UlElement = ({ attributes, children }: RenderElementProps) => {
-  return <ol {...attributes}>{children}</ol>
+  return <ul {...attributes}>{children}</ul>
 }
 
 export const OlElement = ({ attributes, children }: RenderElementProps) => {

@@ -40,12 +40,12 @@ export const withShortcuts = (editor: ReactEditor) => {
         Transforms.delete(editor)
         Transforms.setNodes(editor, { type }, { match: n => Editor.isBlock(editor, n) })
 
-        // if (type === 'ul-item') {
-        //   const list = { type: 'ul', children: [] }
-        //   Transforms.wrapNodes(editor, list, {
-        //     match: n => n.type === 'ul-item',
-        //   })
-        // }
+        if (type === 'ul-item') {
+          const list = { type: 'ul', children: [] }
+          Transforms.wrapNodes(editor, list, {
+            match: n => n.type === 'ul-item',
+          })
+        }
         if (type === 'ol-item') {
           const list = { type: 'ol', children: [] }
           Transforms.wrapNodes(editor, list, {

@@ -5,7 +5,12 @@ export const App: SFC = () => {
   return (
     <div
       className="App"
-      style={{ width: '100%', height: '100%', paddingTop: '100px', paddingLeft: '100px' }}
+      style={{
+        width: '100%',
+        height: '100%',
+        padding: '100px',
+        boxSizing: 'border-box',
+      }}
     >
       <MySlate />
     </div>
