@@ -8,6 +8,9 @@ export const Leaf = (props: RenderLeafProps) => {
   if (leaf.code) {
     return <CodeInlineElement {...props} />
   }
+  // if (leaf.strike) {
+  //   return <Strike {...props} />
+  // }
   // if (leaf.bold) {
   //   return <BoldElement {...props} />
   // }
@@ -21,11 +24,22 @@ const LeafElement = ({ attributes, leaf, children }: RenderLeafProps) => {
       {...attributes}
       style={{
         fontWeight: leaf.bold ? 'bold' : 'normal',
-        borderBottom: leaf.underline ? 'solid 1px black' : '',
-        backgroundColor: leaf.highlight ? '#ffff00' : '#ffffff',
+        fontStyle: leaf.italic ? 'italic' : 'normal',
+        // borderBottom: leaf.underline ? 'solid 1px black' : '',
+        // textDecoration: leaf.underline ? 'underline' : 'none',
+        textDecoration: `${leaf.underline ? 'underline' : ''} ${leaf.strike ? 'line-through' : ''}`,
+        backgroundColor: leaf.highlight ? '#ffff00' : '',
       }}
     >
       {children}
     </span>
   )
 }
+
+// const Strike = ({ attributes, children, leaf }: RenderLeafProps) => {
+//   return (
+//     <span {...attributes} style={{ textDecoration: leaf.strike ? 'line-through' : 'none' }}>
+//       {children}
+//     </span>
+//   )
+// }

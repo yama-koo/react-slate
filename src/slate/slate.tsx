@@ -76,23 +76,6 @@ export const MySlate = () => {
     return <Leaf {...props} />
   }, [])
 
-  const handleOnMouseDown = (format: string) => {
-    switch (format) {
-      case 'ul':
-        toggleUlBlock(editor)
-        break
-      case 'ol':
-        toggleOlBlock(editor)
-        break
-      case 'checkbox':
-        toggleCheckBoxBlock(editor)
-        break
-      default:
-        toggleMark(editor, format)
-        break
-    }
-  }
-
   return (
     <div style={{ width: '60%' }}>
       <div style={{ width: '100%' }}>{JSON.stringify(value)}</div>
@@ -106,6 +89,18 @@ export const MySlate = () => {
       >
         {/* <ToolBar onMouseDown={handleOnMouseDown}> */}
         <ToolBar>
+          <Button
+            text="H1"
+            toggleEvent={() => {
+              toggleBlock(editor, 'h1')
+            }}
+          />
+          <Button
+            text="H3"
+            toggleEvent={() => {
+              toggleBlock(editor, 'h3')
+            }}
+          />
           <Button
             text="B"
             toggleEvent={() => {
@@ -133,7 +128,7 @@ export const MySlate = () => {
           <Button
             text="U"
             toggleEvent={() => {
-              toggleMark(editor, 'U')
+              toggleMark(editor, 'underline')
             }}
           />
           <Button
@@ -146,6 +141,24 @@ export const MySlate = () => {
             text="[]"
             toggleEvent={() => {
               toggleBlock(editor, 'checkbox')
+            }}
+          />
+          <Button
+            text="''"
+            toggleEvent={() => {
+              toggleBlock(editor, 'block-quote-wrapper')
+            }}
+          />
+          <Button
+            text="S"
+            toggleEvent={() => {
+              toggleMark(editor, 'strike')
+            }}
+          />
+          <Button
+            text="I"
+            toggleEvent={() => {
+              toggleMark(editor, 'italic')
             }}
           />
         </ToolBar>
@@ -226,7 +239,7 @@ const toggleBlock = (editor: Editor, type: string) => {
   const isActive = isBlockActive(editor, type)
   const list = isList(type)
 
-  if (list) {
+  if (list || type === 'block-quote-wrapper') {
     Transforms.unwrapNodes(editor, {
       match: n => n.type === type,
       split: true,
@@ -237,96 +250,19 @@ const toggleBlock = (editor: Editor, type: string) => {
     if (isActive) {
       return 'paragraph'
     }
-
+    if (type === 'block-quote-wrapper') {
+      return 'block-quote-item'
+    }
     return list ? 'list' : type
   }
 
   Transforms.setNodes(editor, { type: newType() })
 
-  if (list) {
-    Transforms.wrapNodes(editor, { type, children: [] }, { match: n => n.type === 'list' })
+  if (list || type === 'block-quote-wrapper') {
+    Transforms.wrapNodes(
+      editor,
+      { type, children: [] },
+      { match: n => n.type === 'list' || n.type === 'block-quote-item' },
+    )
   }
-}
-
-const isUlActive = (editor: Editor) => {
-  // eslint-disable-next-line @typescript-eslint/ban-ts-ignore
-  // @ts-ignore
-  const [match] = Editor.nodes(editor, {
-    match: n => n.type === 'ul',
-    universal: true,
-  })
-
-  return !!match
-}
-
-const toggleUlBlock = (editor: Editor) => {
-  const isActive = isUlActive(editor)
-
-  Transforms.unwrapNodes(editor, {
-    match: n => {
-      return n.type === 'ul'
-    },
-    split: true,
-  })
-
-  Transforms.setNodes(editor, { type: isActive ? 'paragraph' : 'ul-item' })
-  Transforms.wrapNodes(
-    editor,
-    { type: 'ul', children: [] },
-    {
-      match: n => {
-        return n.type === 'ul-item'
-      },
-    },
-  )
-}
-
-const isOlActive = (editor: Editor) => {
-  // eslint-disable-next-line @typescript-eslint/ban-ts-ignore
-  // @ts-ignore
-  const [match] = Editor.nodes(editor, {
-    match: n => n.type === 'ol',
-    universal: true,
-  })
-
-  return !!match
-}
-
-const toggleOlBlock = (editor: Editor) => {
-  const isActive = isOlActive(editor)
-
-  Transforms.unwrapNodes(editor, {
-    match: n => {
-      return n.type === 'ol'
-    },
-    split: true,
-  })
-
-  Transforms.setNodes(editor, { type: isActive ? 'paragraph' : 'ol-item' })
-  Transforms.wrapNodes(
-    editor,
-    { type: 'ol', children: [] },
-    {
-      match: n => {
-        return n.type === 'ol-item'
-      },
-    },
-  )
-}
-
-const isCheckBoxActive = (editor: Editor) => {
-  // eslint-disable-next-line @typescript-eslint/ban-ts-ignore
-  // @ts-ignore
-  const [match] = Editor.nodes(editor, {
-    match: n => n.type === 'checkbox',
-    universal: true,
-  })
-
-  return !!match
-}
-
-const toggleCheckBoxBlock = (editor: Editor) => {
-  const isActive = isCheckBoxActive(editor)
-
-  Transforms.setNodes(editor, { type: isActive ? 'paragraph' : 'checkbox' })
 }
